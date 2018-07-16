@@ -1,0 +1,39 @@
+name: wai-jwt-auth-middleware
+version: "0.0.0"
+category: "Web"
+synopsis: Gives Wai applications the ability to use JWT bearer tokens
+description: JWT Auth Middleware for Wai
+license: MIT
+author: "CaptJakk"
+copyright: "Keagan (CaptJakk) McClelland"
+maintainer: "keagan.mcclelland@gmail.com"
+
+dependencies:
+  - aeson
+  - asn1-encoding
+  - asn1-types
+  - base
+  - bytestring
+  - cryptonite
+  - http-types
+  - jose-jwt
+  - mtl
+  - pem
+  - protolude
+  - transformers
+  - unordered-containers
+  - vault
+  - wai
+  - x509
+
+library:
+  source-dirs:
+    - src
+  exposed-modules:
+    - Network.Wai.Middleware.JwtAuth
+  ghc-options:
+    - -Wall
+    - -fwarn-tabs
+    - -fdefer-typed-holes
+
+github: CaptJakk/wai-jwt-auth-middleware

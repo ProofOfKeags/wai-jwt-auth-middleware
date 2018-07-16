@@ -15,6 +15,7 @@ import           Data.ASN1.Types
 import           Data.Aeson
 import           Data.Aeson.Types
 import qualified Data.ByteString as BS
+import qualified Data.HashMap.Lazy as HM
 import           Data.PEM
 import qualified Data.Vault.Lazy as V
 import           Data.X509 (PubKey(..), PubKeyEC(..))
@@ -26,12 +27,29 @@ import           Network.Wai
 import           Network.HTTP.Types (hAuthorization)
 import           Network.HTTP.Types.Status (status401)
 
-jwtAuth :: V.Key Value -> [Jwk] -> Middleware
-jwtAuth attr keys app req res = do
+type IssuerMap = HM.HashMap Text Jwk
+
+jwtAuthMap :: V.Key Value -> IssuerMap -> Middleware
+jwtAuthMap = jwtAuth' f
+    where f m bs = maybeToList $ do
+            claims <- rightToMaybe $ JWT.decodeClaims bs
+            iss <- JWT.jwtIss $ snd claims
+            HM.lookup iss m
+
+jwtAuthList :: V.Key Value -> [Jwk] -> Middleware
+jwtAuthList = jwtAuth' const
+
+jwtAuthSingle :: V.Key Value -> Jwk -> Middleware
+jwtAuthSingle = jwtAuth' (return .* const)
+    where (.*) = (.).(.)
+
+jwtAuth' :: (a -> ByteString -> [Jwk]) -> V.Key Value -> a -> Middleware
+jwtAuth' keyFn attr keyStore app req res = do
     checked <- runMaybeT $ do
         hdr <- liftMaybe $ lookup hAuthorization $ requestHeaders req
         unless (hdr `startsWith` "Bearer ") empty
         let token = (BS.drop 7 hdr)
+        let keys = keyFn keyStore token
         MaybeT $ rightToMaybe <$> JWT.decode keys Nothing token
     case checked of
         Nothing -> res $ responseLBS status401 [] "Invalid Bearer Token"

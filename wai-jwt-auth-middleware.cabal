@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fdaa751f1d73d3b243a8c1ae120f797f0551094eaec38321541f3261f490cb22
+-- hash: e54ca959931a3e11530cfb95b74e004ff6c205b3988b6f1fa10f7715cd6813b6
 
 name:           wai-jwt-auth-middleware
 version:        0.0.0
@@ -44,6 +44,7 @@ library
     , pem
     , protolude
     , transformers
+    , unordered-containers
     , vault
     , wai
     , x509
