@@ -6,23 +6,17 @@ module Network.Wai.Middleware.JwtAuth where
 import Protolude
 import Prelude (String, lookup)
 
-import           Control.Monad.Except
-import           Control.Monad.Trans.Class
-import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Maybe
-import           Crypto.PubKey.ECC.Generate (generateQ)
 import           Crypto.PubKey.ECC.Types
-import           Crypto.PubKey.ECC.ECDSA (PublicKey(..), KeyPair(..))
+import           Crypto.PubKey.ECC.ECDSA (PublicKey(..))
 import           Data.ASN1.BinaryEncoding
 import           Data.ASN1.Encoding
 import           Data.ASN1.Types
 import           Data.Aeson
 import           Data.Aeson.Types
-import           Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
-import           Data.Maybe
 import           Data.PEM
-import           Data.X509 (PubKey(..), PrivKey(..), PubKeyEC(..), PrivKeyEC(..))
+import           Data.X509 (PubKey(..), PubKeyEC(..))
 import           Data.X509.EC 
 import           Jose.Jwa (Alg(Signed), JwsAlg(ES256))
 import           Jose.Jwk
@@ -40,7 +34,7 @@ jwtAuth keys app req res = do
         MaybeT $ rightToMaybe <$> JWT.decode keys Nothing token
     case checked of
         Nothing -> res $ responseLBS status401 [] "Invalid Bearer Token"
-        Just x -> app req res
+        Just _ -> app req res
     where
         liftMaybe = MaybeT . return
         startsWith bs = flip BS.take bs . BS.length >>= (==)
@@ -48,14 +42,8 @@ jwtAuth keys app req res = do
 loadPubKeys :: [FilePath] -> IO [Jwk]
 loadPubKeys = fmap catMaybes . traverse loadPubKey
 
--- loadPrivKeys :: [FilePath] -> IO [Jwk]
--- loadPrivKeys = fmap catMaybes . traverse loadPrivKey
-
 loadPubKey :: FilePath -> IO (Maybe Jwk)
 loadPubKey = loadKey pub2jwk
-
--- loadPrivKey :: FilePath -> IO (Maybe Jwk)
--- loadPrivKey = loadKey priv2jwk
 
 loadKey :: (PEM -> Either String Jwk) -> FilePath -> IO (Maybe Jwk)
 loadKey convert path = do
@@ -83,25 +71,6 @@ pub2jwk pem = do
                     (_, Nothing) -> Left "Could not parse curve"
                     (Just p, Just c) -> Right $ EcPublicJwk (PublicKey curve p) Nothing Nothing (Just $ Signed ES256) c
             c@_ -> Left $ "Unsupported Curve for JWT: " <> show c
-
--- priv2jwk :: PEM -> Either String Jwk
--- priv2jwk pem = do
---     asn1stream <- first show . decodeASN1' DER $ pemContent pem
---     key <- fst <$> fromASN1 asn1stream
---     privKey <- case key of
---         PrivKeyEC ec -> Right ec
---         _ -> Left "Invalid Key Type for JWT"
---     case privKey of
---         PrivKeyEC_Prime{..} -> Left "Unsupported Curve for JWT: Prime"
---         PrivKeyEC_Named{..} -> case privkeyEC_name of
---             SEC_p256r1 ->
---                 let curve = getCurveByName SEC_p256r1
---                     point = generateQ curve privkeyEC_priv
---                     jwkcrv = parseMaybe parseJSON $ String "P-256"
---                 in  case jwkcrv of
---                     Nothing -> "Could not parse curve"
---                     Just c -> Right $ EcPrivateJwk (KeyPair curve point privkeyEC_priv) Nothing Nothing (Just $ Signed ES256) c
---             c@_ -> Left $ "Unsupported Curve for JWT: " <> show c
 
 headErr :: e -> [a] -> Either e a
 headErr e = maybeToRight e . head

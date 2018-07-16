@@ -1,38 +1,49 @@
-name:                wai-jwt-auth-middleware
-version:             0.1.0.0
--- synopsis:
--- description:
-homepage:            https://github.com/CaptJakk/wai-jwt-auth-middleware#readme
-license:             BSD3
-license-file:        LICENSE
-author:              Keagan McClelland
-maintainer:          keagan.mcclelland@gmail.com
-copyright:           (c) 2018 Keagan McClelland
-category:            Wai
-build-type:          Simple
-cabal-version:       >=1.10
-extra-source-files:  README.md
+-- This file has been generated from package.yaml by hpack version 0.28.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: d354c1bbf329982e466a3a1eac586ac52e4d08dd6e7204b4f1381ae109c36729
+
+name:           wai-jwt-auth-middleware
+version:        0.0.0
+synopsis:       Gives Wai applications the ability to use JWT bearer tokens
+description:    JWT Auth Middleware for Wai
+category:       Web
+homepage:       https://github.com/CaptJakk/wai-jwt-auth-middleware#readme
+bug-reports:    https://github.com/CaptJakk/wai-jwt-auth-middleware/issues
+author:         CaptJakk
+maintainer:     keagan.mcclelland@gmail.com
+copyright:      Keagan (CaptJakk) McClelland
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+
+source-repository head
+  type: git
+  location: https://github.com/CaptJakk/wai-jwt-auth-middleware
 
 library
-  hs-source-dirs:      src
-  default-language:    Haskell2010
-  build-depends:       aeson               >= 1.2.4.0  && < 1.5
-                     , asn1-encoding       >= 0.9.5    && < 0.10
-                     , asn1-types          >= 0.3.2    && < 0.4
-                     , base                >= 4.7      && < 5
-                     , bytestring          >= 0.10.8   && < 0.11
-                     , composition-prelude >= 1.3.0.8  && < 2
-                     , cryptonite          >= 0.24     && < 0.26
-                     , file-embed          >= 0.0.10.1 && < 0.0.11
-                     , http-types    >= 0.12     && < 0.13
-                     , jose-jwt      >= 0.7      && < 0.8
-                     , mtl           >= 2.2.2    && < 3
-                     , pem           >= 0.2.4    && < 0.3
-                     , protolude     >= 0.2.2    && < 0.3
-                     , transformers  >= 0.5.2.0  && < 0.6
-                     , wai           >= 3.2      && < 4
-                     , x509          >= 1.7      && < 2
-  default-extensions: NoImplicitPrelude
-                    , OverloadedStrings
   exposed-modules:
-    Network.Wai.Middleware.JwtAuth
+      Network.Wai.Middleware.JwtAuth
+  other-modules:
+      Paths_wai_jwt_auth_middleware
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -fwarn-tabs -fdefer-typed-holes
+  build-depends:
+      aeson
+    , asn1-encoding
+    , asn1-types
+    , base
+    , bytestring
+    , cryptonite
+    , http-types
+    , jose-jwt
+    , mtl
+    , pem
+    , protolude
+    , transformers
+    , wai
+    , x509
+  default-language: Haskell2010
