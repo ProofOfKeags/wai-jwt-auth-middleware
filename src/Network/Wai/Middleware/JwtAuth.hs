@@ -16,6 +16,7 @@ import           Data.Aeson
 import           Data.Aeson.Types
 import qualified Data.ByteString as BS
 import           Data.PEM
+import qualified Data.Vault.Lazy as V
 import           Data.X509 (PubKey(..), PubKeyEC(..))
 import           Data.X509.EC 
 import           Jose.Jwa (Alg(Signed), JwsAlg(ES256))
@@ -25,8 +26,8 @@ import           Network.Wai
 import           Network.HTTP.Types (hAuthorization)
 import           Network.HTTP.Types.Status (status401)
 
-jwtAuth :: [Jwk] -> Middleware
-jwtAuth keys app req res = do
+jwtAuth :: V.Key Value -> [Jwk] -> Middleware
+jwtAuth attr keys app req res = do
     checked <- runMaybeT $ do
         hdr <- liftMaybe $ lookup hAuthorization $ requestHeaders req
         unless (hdr `startsWith` "Bearer ") empty
@@ -34,8 +35,15 @@ jwtAuth keys app req res = do
         MaybeT $ rightToMaybe <$> JWT.decode keys Nothing token
     case checked of
         Nothing -> res $ responseLBS status401 [] "Invalid Bearer Token"
-        Just _ -> app req res
+        Just x -> case x of
+            JWT.Unsecured b -> app (attach b req) res
+            JWT.Jws (_, b) -> app (attach b req) res
+            JWT.Jwe (_, b) -> app (attach b req) res
     where
+        attach b r = case decodeStrict b of
+            Nothing -> r
+            Just v -> let vault' = V.insert attr v (vault r)
+                      in r { vault = vault' }
         liftMaybe = MaybeT . return
         startsWith bs = flip BS.take bs . BS.length >>= (==)
 
