@@ -8,7 +8,7 @@ import Prelude (String, lookup)
 
 import           Control.Monad.Trans.Maybe
 import           Crypto.PubKey.ECC.Types
-import           Crypto.PubKey.ECC.ECDSA (PublicKey(..))
+import           Crypto.PubKey.ECC.ECDSA (PublicKey(..), KeyPair(..))
 import           Data.ASN1.BinaryEncoding
 import           Data.ASN1.Encoding
 import           Data.ASN1.Types
@@ -97,6 +97,21 @@ pub2jwk pem = do
                     (_, Nothing) -> Left "Could not parse curve"
                     (Just p, Just c) -> Right $ EcPublicJwk (PublicKey curve p) Nothing Nothing (Just $ Signed ES256) c
             c@_ -> Left $ "Unsupported Curve for JWT: " <> show c
+
+-- priv2jwk :: PEM -> Either String Jwk
+-- priv2jwk pem = do
+    -- asn1stream <- first show . decodeASN1' DER $ pemContent pem
+    -- key <- fst <$> fromASN1 asn1stream
+    -- _
+
+-- newtype ECKeyPair = ECKeyPair { unKeyPair :: KeyPair }
+
+-- instance ASN1Object ECKeyPair where
+--     fromASN1 asn1s = case asn1s of
+--         (Start Sequence:
+--             IntVal _:
+--             OcteString priv:
+--             Start _:rest) 
 
 headErr :: e -> [a] -> Either e a
 headErr e = maybeToRight e . head
