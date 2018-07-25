@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE LambdaCase #-}
 module Network.Wai.Middleware.JwtAuth where
 
 import Protolude
@@ -13,11 +14,6 @@ import           Crypto.PubKey.ECC.ECDSA (PublicKey(..), KeyPair(..))
 import           Data.ASN1.BinaryEncoding
 import           Data.ASN1.Encoding
 import           Data.ASN1.Types
-
--- import           Data.X509.Internal
--- import           Data.X509.OID
--- import           Data.X509.AlgorithmIdentifier
-
 import           Data.Aeson
 import           Data.Aeson.Types
 import qualified Data.ByteString as BS
@@ -33,6 +29,7 @@ import qualified Jose.Jwt as JWT
 import           Network.Wai
 import           Network.HTTP.Types (hAuthorization)
 import           Network.HTTP.Types.Status (status401)
+import           Control.Category ((>>>))
 
 type IssuerMap = HM.HashMap Text Jwk
 
@@ -78,58 +75,18 @@ loadPubKeys = fmap catMaybes . traverse loadPubKey
 loadPubKey :: FilePath -> IO (Maybe Jwk)
 loadPubKey = loadKey pub2jwk
 
---loadPubKey :: FilePath -> IO (Maybe Jwk)
---loadPubKey = loadKey pub2jwk
+loadPrivKeys :: [FilePath] -> IO [Jwk]
+loadPrivKeys = fmap catMaybes . traverse loadPrivKey
 
---priv2jwk :: PEM -> IO()
---priv2jwk pem = print (first show . decodeASN1' DER $ pemContent pem)
-----
--- loadKeyDev :: FilePath -> IO (Maybe [ASN1])
--- loadKeyDev path = do
---    fileBytes <- BS.readFile path
---    return . rightToMaybe $ do
---         pem <- pemParseBS fileBytes >>= headErr "Empty PEM"
---         asn1stream <- first show . decodeASN1' DER $ pemContent pem
---         return asn1stream
+loadPrivKey :: FilePath -> IO (Maybe Jwk)
+loadPrivKey = loadKey priv2jwk
 
-loadKey convert path = do
-   fileBytes <- BS.readFile path
-   return . rightToMaybe $ do
-        pem <- pemParseBS fileBytes >>= headErr "Empty PEM"
-        convert pem
-
---loadKey :: (PEM -> Either String Jwk) -> FilePath -> IO (Maybe Jwk)
---loadKey convert path = do
---    fileBytes <- BS.readFile path
---    pem <- pemParseBS fileBytes >>= headErr "Empty PEM"
---    convert pem
-
--- instance ASN1Object PrivKeyEC where
---     fromASN1 (Start Sequence
---         :IntVal 1
---         :OctetString privKey
---         :Start (Container Context 0)
---         :OID curveOid
---         :End (Container Context 0):xs) = case lookupByOID curvesOIDTable curveOid of
---             Just curveName -> Right (PrivKeyEC_Named curveName (privKey), xs)
---             Nothing        -> Left ("fromASN1: X509.Pubkey: EC unknown curve " ++ show curveOid)
---     fromASN1 l = Left ("fromASN1: X509.PrivKey: unknown format:" ++ show l)
+loadKey :: (PEM -> Either String Jwk) -> String -> IO (Maybe Jwk)
+loadKey convert =
+   BS.readFile >=> (pemParseBS >=> headErr "Empty PEM" >=> convert) >>> rightToMaybe >>> return
 
 priv2jwk :: PEM -> Either String Jwk
-priv2jwk pem = do
-    priv <- (headErr "No private keys in pem") . readKeyFileFromMemory . pemContent $ pem
-    pp <- case priv of
-            PrivKeyEC (PrivKeyEC_Named SEC_p256r1 privNumber) -> Right $ pair2jwk ((parseMaybe parseJSON $ String "P-256")) (privInt2ECPair (getCurveByName SEC_p256r1) privNumber)
-            _ -> Left "Not an elliptic curve private key"
-    return $ pp
-
-
-
-privInt2ECPair :: Curve -> Integer -> KeyPair
-privInt2ECPair c privNumber = KeyPair c (generateQ c privNumber) privNumber
-
-pair2jwk :: Curve -> KeyPair -> Jwk
-pair2jwk c p = EcPrivateJwk p Nothing Nothing Nothing c
+priv2jwk pem = readPrivkeyPem pem >>= extractJwkPrivKey
 
 pub2jwk :: PEM -> Either String Jwk
 pub2jwk pem = do
@@ -153,3 +110,20 @@ pub2jwk pem = do
 
 headErr :: e -> [a] -> Either e a
 headErr e = maybeToRight e . head
+
+extractJwkPrivKey :: PrivKey -> Either String Jwk
+extractJwkPrivKey = \case
+                       PrivKeyEC (PrivKeyEC_Named SEC_p256r1 privNumber) -> Right $ secp256r1Jwk privNumber
+                       _ -> Left "Private key type not supported"
+
+secp256r1Jwk :: Integer -> Jwk
+secp256r1Jwk privNumber = EcPrivateJwk (privInt2ECPair curve privNumber) Nothing Nothing (Just $ Signed ES256) jwkCurve
+  where
+    curve = getCurveByName SEC_p256r1
+    Success jwkCurve = parse parseJSON $ String "P-256"
+
+privInt2ECPair :: Curve -> Integer -> KeyPair
+privInt2ECPair c privNumber = KeyPair c (generateQ c privNumber) privNumber
+
+readPrivkeyPem :: PEM -> Either String PrivKey
+readPrivkeyPem =  maybeToRight "No privKeys" . join . head . pemToKey []
