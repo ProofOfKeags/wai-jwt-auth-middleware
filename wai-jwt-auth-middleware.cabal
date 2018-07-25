@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e54ca959931a3e11530cfb95b74e004ff6c205b3988b6f1fa10f7715cd6813b6
+-- hash: 6128859517b1404283b0d7006aeca4837fb0188bcc861c23a3982e9d5ffa2027
 
 name:           wai-jwt-auth-middleware
 version:        0.0.0
@@ -48,4 +48,5 @@ library
     , vault
     , wai
     , x509
+    , x509-store
   default-language: Haskell2010

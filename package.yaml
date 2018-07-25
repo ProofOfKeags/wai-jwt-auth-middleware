@@ -25,6 +25,7 @@ dependencies:
   - vault
   - wai
   - x509
+  - x509-store
 
 library:
   source-dirs:
