@@ -16,7 +16,7 @@ dependencies:
   - bytestring
   - cryptonite
   - http-types
-  - jose-jwt
+  - jose-jwt >= 0.8.0 && < 0.9
   - mtl
   - pem
   - protolude

@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6128859517b1404283b0d7006aeca4837fb0188bcc861c23a3982e9d5ffa2027
+-- hash: 74f851a7213fcec358a5170b597db4a7fa7b537cfe28dcd3acaa0fa338f0904e
 
 name:           wai-jwt-auth-middleware
 version:        0.0.0
@@ -39,7 +39,7 @@ library
     , bytestring
     , cryptonite
     , http-types
-    , jose-jwt
+    , jose-jwt >=0.8.0 && <0.9
     , mtl
     , pem
     , protolude

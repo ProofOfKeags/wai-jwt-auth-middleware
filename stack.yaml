@@ -38,7 +38,9 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
-# extra-deps: []
+extra-deps:
+  - git: git@github.com:CaptJakk/jose-jwt.git
+    commit: b6bc13754072815327a839b8da0549ff4dca6a41
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
